@@ -11,6 +11,7 @@ import ReloadPrompt from "./ReloadPrompt";
 import useRequest from "./hooks/useRequest";
 import Dashboard from "./pages/dashboard";
 import Login from "./pages/login";
+import { http } from "./utils/api";
 
 function App() {
   // replaced dyanmicaly
@@ -24,6 +25,7 @@ function App() {
   });
   useEffect(() => {
     (async () => {
+      console.log(await http.get("/api/hello"));
       const data = await getUser();
       console.log(data);
       dispatch(setUser(data.data));
