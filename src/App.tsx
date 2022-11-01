@@ -26,7 +26,7 @@ function App() {
   useEffect(() => {
     (async () => {
       try {
-        console.log(await http.get("/api/hello"));
+        console.log(await http.get("/"));
       } catch (err) {
         console.log(err);
       }
