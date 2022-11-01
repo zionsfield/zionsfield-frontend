@@ -25,6 +25,7 @@ function App() {
   useEffect(() => {
     (async () => {
       const data = await getUser();
+      console.log(data);
       dispatch(setUser(data.data));
     })();
   }, []);
