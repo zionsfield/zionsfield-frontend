@@ -25,7 +25,11 @@ function App() {
   });
   useEffect(() => {
     (async () => {
-      console.log(await http.get("/api/hello"));
+      try {
+        console.log(await http.get("/api/hello"));
+      } catch (err) {
+        console.log(err);
+      }
       const data = await getUser();
       console.log(data);
       dispatch(setUser(data.data));
