@@ -17,6 +17,10 @@ interface FormData {
   term?: string;
 }
 
+interface FormData2 {
+  content: string;
+}
+
 const Dashboard = (props: Props) => {
   const [schemes, setSchemes] = useState<ISOW[]>([]);
   const [classes, setClasses] = useState<IClass[]>([]);
@@ -58,7 +62,52 @@ const Dashboard = (props: Props) => {
     method: "get",
   });
 
-  const { register, watch } = useForm<FormData>();
+  const { doRequest: newSession, errors: newSessionsErrors } = useRequest({
+    url: "/api/sessions",
+    method: "post",
+  });
+
+  const { doRequest: editScheme, errors: editSchemeErrors } = useRequest({
+    url: "/api/schemes",
+    method: "put",
+  });
+
+  const { doRequest: deleteScheme, errors: deleteSchemeErrors } = useRequest({
+    url: "/api/schemes",
+    method: "delete",
+  });
+
+  const [content, setContent] = useState("");
+  const [classSelect, setClass] = useState(
+    localStorage.getItem("class") || "select"
+  );
+  const [subjectSelect, setSubject] = useState(
+    localStorage.getItem("subject") || "select"
+  );
+  const [sessionSelect, setSession] = useState(
+    localStorage.getItem("session") || "select"
+  );
+
+  const loadSchemes = async () => {
+    const queryObject: FormData = {
+      subject: localStorage.getItem("subject") || undefined,
+      class: localStorage.getItem("class") || undefined,
+      term: localStorage.getItem("session") || undefined,
+    };
+    console.log(queryObject);
+    const queryParams = getQueryFromObject<FormData>(queryObject);
+    console.log(queryParams);
+    const data2 = (await getSchemes({}, `?${queryParams}`)).data.schemes;
+    console.log(data2);
+    setSchemes(data2);
+  };
+
+  // const {
+  //   register,
+  //   watch,
+  //   handleSubmit,
+  //   formState: { errors },
+  // } = useForm<FormData2>();
 
   useEffect(() => {
     (async () => {
@@ -68,35 +117,68 @@ const Dashboard = (props: Props) => {
       setClasses(classesData);
       setSubjects(subjectsData);
       setSessions(sessionsData);
+      const cachedClass = localStorage.getItem("class");
+      const cachedSubject = localStorage.getItem("subject");
+      if (
+        cachedClass &&
+        cachedSubject &&
+        cachedClass !== "null" &&
+        cachedSubject !== "null"
+      ) {
+        route(
+          `${LinkRoutes.DASHBOARD}?class=${cachedClass}&subject=${cachedSubject}`
+        );
+        await loadSchemes();
+      }
     })();
   }, []);
 
   const onSubmit = async (e: any) => {
     e.preventDefault();
-    if (!query.get("subject")) {
+    console.log(query.get("subject"));
+    if (!query.get("subject") || query.get("subject") === "null") {
       return;
     }
-    if (!query.get("class")) {
+    if (!query.get("class") || query.get("class") === "null") {
       return;
     }
     if (localStorage.getItem("session") === "select") {
       return;
     }
-    const queryParams = getQueryFromObject<FormData>({
-      subject: query.get("subject") || undefined,
-      class: query.get("class") || undefined,
-      term: localStorage.getItem("session") || undefined,
-    });
-    const data = (await getSchemes({}, `?${queryParams}`)).data.schemes;
-    console.log(data);
-    setSchemes(data);
+
+    await loadSchemes();
     forceUpdate();
   };
 
+  const onSubmit2 = async (e: any) => {
+    if (
+      !query.get("edit") ||
+      !query.get("subject") ||
+      !query.get("class") ||
+      !localStorage.getItem("session")
+    )
+      return;
+    const data = {
+      subject: query.get("subject"),
+      class: query.get("class"),
+      term: localStorage.getItem("session"),
+      content,
+    };
+
+    await editScheme(data, `/${query.get("edit")}`);
+    await loadSchemes();
+    forceUpdate();
+  };
+
+  function auto_grow(element: HTMLTextAreaElement) {
+    element.style.height = "5px";
+    element.style.height = element.scrollHeight + "px";
+  }
+
   return (
     <div className="mt-4 max-w-7xl mx-auto space-y-2 px-3">
-      <div className="flex justify-between">
-        <h1 className="font-bold text-2xl">Scheme of Work</h1>
+      <div className="flex space-x-3 md:justify-between items-center">
+        <h1 className="font-bold text-xl md:text-2xl">Scheme of Work</h1>
         {/* user?.role === Role.TEACHER */}
         {user?.role === Role.TEACHER && (
           <div>
@@ -105,16 +187,26 @@ const Dashboard = (props: Props) => {
                 className="bg-blue-400 px-2 py-1 rounded-sm text-white"
                 onClick={() => route(`${LinkRoutes.DASHBOARD}`)}
               >
-                All
+                All Schemes
               </button>
             ) : (
               <button
                 className="bg-blue-400 px-2 py-1 rounded-sm text-white"
                 onClick={() => route(`${LinkRoutes.DASHBOARD}?new=true`)}
               >
-                New
+                New Scheme
               </button>
             )}
+          </div>
+        )}
+        {user?.role === Role.TEACHER && (
+          <div>
+            <button
+              className="bg-blue-400 px-2 py-1 rounded-sm text-white"
+              onClick={() => newSession()}
+            >
+              New Session
+            </button>
           </div>
         )}
       </div>
@@ -126,16 +218,17 @@ const Dashboard = (props: Props) => {
             <div className="flex space-x-2 mb-3">
               <select
                 id="class"
-                defaultValue={query.get("class") || "select"}
-                {...register("class")}
+                value={classSelect}
                 ref={classRef}
-                onChange={(e) =>
+                onChange={(e) => {
+                  localStorage.setItem("class", e.target.value);
+                  setClass(e.target.value);
                   route(
                     `${LinkRoutes.DASHBOARD}?class=${e.target.value}${
                       currentSubject ? `&subject=${currentSubject}` : ""
                     }`
-                  )
-                }
+                  );
+                }}
                 className="shadow block border rounded px-3 py-2 outline-none flex-1"
               >
                 <option value="select">Select Class</option>
@@ -149,16 +242,17 @@ const Dashboard = (props: Props) => {
             <div className="flex space-x-2 mb-3">
               <select
                 id="subject"
-                defaultValue={query.get("subject") || "select"}
-                {...register("subject")}
+                value={subjectSelect}
                 ref={subjectRef}
-                onChange={(e) =>
+                onChange={(e) => {
+                  localStorage.setItem("subject", e.target.value);
+                  setSubject(e.target.value);
                   route(
                     `${LinkRoutes.DASHBOARD}?subject=${e.target.value}${
                       currentClass ? `&class=${currentClass}` : ""
                     }`
-                  )
-                }
+                  );
+                }}
                 className="shadow block border rounded px-3 py-2 outline-none flex-1"
               >
                 <option value="select">Select Subject</option>
@@ -172,12 +266,12 @@ const Dashboard = (props: Props) => {
             <div className="flex space-x-2 mb-3">
               <select
                 id="session"
-                {...register("term")}
                 ref={sessionRef}
-                onChange={(e) =>
-                  localStorage.setItem("session", e.target.value)
-                }
-                defaultValue={localStorage.getItem("session") || "select"}
+                onChange={(e) => {
+                  localStorage.setItem("session", e.target.value);
+                  setSession(e.target.value);
+                }}
+                value={sessionSelect}
                 className="shadow block border rounded px-3 py-2 outline-none flex-1"
               >
                 <option value="select">Select Session</option>
@@ -202,15 +296,84 @@ const Dashboard = (props: Props) => {
               />
             </div>
           </form>
-          {schemes.length > 0 ? (
-            <div>
-              {schemes?.map((scheme) => (
-                <div key={scheme.id}>{scheme.content}</div>
-              ))}
-            </div>
-          ) : (
-            <div>Please select subject, class and session</div>
-          )}
+          <div className="">
+            {schemes.length > 0 ? (
+              <div className="">
+                {schemes?.map((scheme) => (
+                  <div key={scheme.id} className="flex-col flex">
+                    {user?.role === Role.TEACHER && (
+                      <div className="w-full flex justify-end space-x-3">
+                        {query.get("edit") ? (
+                          <button
+                            onClick={(e) => {
+                              onSubmit2(e);
+                              route(
+                                `${LinkRoutes.DASHBOARD}?subject=${currentSubject}&class=${currentClass}`
+                              );
+                            }}
+                            className=" z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
+                          >
+                            Save
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) =>
+                              route(
+                                `${LinkRoutes.DASHBOARD}?edit=${scheme.id}${
+                                  currentSubject
+                                    ? `&subject=${currentSubject}`
+                                    : ""
+                                }${
+                                  currentClass ? `&class=${currentClass}` : ""
+                                }`
+                              )
+                            }
+                            className="self-end z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          onClick={async (e) => {
+                            await deleteScheme({}, `/${scheme.id}`);
+                            route(LinkRoutes.DASHBOARD);
+                            window.location.reload();
+                          }}
+                          className="z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+
+                    {query.get("edit") === scheme.id &&
+                    user?.role === Role.TEACHER ? (
+                      <textarea
+                        onInput={(e) => auto_grow(e.currentTarget)}
+                        value={scheme.content}
+                        onChange={(e) => setContent(e.target.value)}
+                        className="resize-none overflow-hidden shadow border rounded py-2 px-3 form-textarea mt-1 block w-full ring-blue-400 outline-none focus:ring"
+                        rows={8}
+                      ></textarea>
+                    ) : (
+                      <p>{scheme.content}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-col flex">
+                {/* <button className="self-end z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md">
+                  Edit
+                </button> */}
+                {query.get("class") && query.get("subject") ? (
+                  <p>No scheme of work here</p>
+                ) : (
+                  <p>Please select subject, class and session</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

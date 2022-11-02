@@ -23,6 +23,11 @@ export interface IClass {
   updatedAt: Date;
 }
 
+export interface IRes<T> {
+  data: T;
+  message?: string;
+}
+
 export interface ITerm {
   id: string;
   startYear: number;
@@ -32,9 +37,9 @@ export interface ITerm {
 
 export interface ISOW {
   id: string;
-  subject: ISubject;
-  class: IClass;
-  term: ITerm;
+  subject: ISubject | string;
+  class: IClass | string;
+  term: ITerm | string;
   content: string;
   createdAt: Date;
   updatedAt: Date;

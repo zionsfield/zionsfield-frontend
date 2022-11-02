@@ -24,7 +24,6 @@ const useRequest = ({ url, method, body, onSuccess }: UseRequest) => {
       if (onSuccess) {
         onSuccess(res.data);
       }
-      console.log(res);
       return res.data;
     } catch (err: any) {
       console.log(err);

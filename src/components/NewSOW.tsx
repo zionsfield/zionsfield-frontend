@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useRequest from "../hooks/useRequest";
 import { getQueryFromObject } from "../utils/api";
 import { LinkRoutes } from "../utils/enums";
-import { IClass, ISubject, ITerm } from "../utils/typings";
+import { IClass, IRes, ISOW, ISubject, ITerm } from "../utils/typings";
 
 type Props = {
   classes: IClass[];
@@ -35,11 +35,41 @@ const NewSOW = ({ classes, subjects, sessions }: Props) => {
   });
 
   const onSubmit = handleSubmit(async (formData) => {
-    if (formData.class === "select") return;
-    if (formData.subject === "select") return;
-    if (formData.term === "select") return;
+    if (formData.class === "select") {
+      if (newSchemeErrors.find((e) => e.message === "Class is required"))
+        return;
+      else {
+        newSchemeErrors.push({ message: "Class is required" });
+        return;
+      }
+    }
+    if (formData.subject === "select") {
+      if (newSchemeErrors.find((e) => e.message === "Subject is required"))
+        return;
+      else {
+        newSchemeErrors.push({ message: "Subject is required" });
+        return;
+      }
+    }
+    if (formData.term === "select") {
+      if (newSchemeErrors.find((e) => e.message === "Session is required"))
+        return;
+      else {
+        newSchemeErrors.push({ message: "Session is required" });
+        return;
+      }
+    }
     console.log(formData);
-    await newScheme(formData);
+    const { data } = (await newScheme(formData)) as IRes<ISOW>;
+    route(
+      `${LinkRoutes.DASHBOARD}?class=${data.class}&subject=${data.subject}`
+    );
+    console.log(data);
+    localStorage.setItem("class", data.class as string);
+    localStorage.setItem("subject", data.subject as string);
+    localStorage.setItem("session", data.term as string);
+
+    window.location.reload();
   });
 
   function auto_grow(element: HTMLTextAreaElement) {
@@ -54,7 +84,7 @@ const NewSOW = ({ classes, subjects, sessions }: Props) => {
           <select
             id="class"
             defaultValue={"select"}
-            {...register("class")}
+            {...register("class", { required: true })}
             className="shadow block border rounded px-3 py-2 outline-none flex-1"
           >
             <option value="select">Select Class</option>
@@ -65,11 +95,14 @@ const NewSOW = ({ classes, subjects, sessions }: Props) => {
             ))}
           </select>
         </div>
+        {errors.class?.type === "required" && (
+          <p className="text-red-500"> - Class is required</p>
+        )}
         <div className="flex space-x-2 mb-3">
           <select
             id="subject"
             defaultValue={"select"}
-            {...register("subject")}
+            {...register("subject", { required: true })}
             className="shadow block border rounded px-3 py-2 outline-none flex-1"
           >
             <option value="select">Select Subject</option>
@@ -80,10 +113,13 @@ const NewSOW = ({ classes, subjects, sessions }: Props) => {
             ))}
           </select>
         </div>
+        {errors.subject?.type === "required" && (
+          <p className="text-red-500"> - Subject is required</p>
+        )}
         <div className="flex space-x-2 mb-3">
           <select
             id="session"
-            {...register("term")}
+            {...register("term", { required: true })}
             defaultValue={"select"}
             className="shadow block border rounded px-3 py-2 outline-none flex-1"
           >
@@ -95,9 +131,12 @@ const NewSOW = ({ classes, subjects, sessions }: Props) => {
             ))}
           </select>
         </div>
+        {errors.term?.type === "required" && (
+          <p className="text-red-500"> - Term is required</p>
+        )}
         <div className="flex space-x-2 mb-3">
           <textarea
-            {...register("content")}
+            {...register("content", { required: true })}
             onInput={(e) => auto_grow(e.currentTarget)}
             className="resize-none overflow-hidden shadow border rounded py-2 px-3 form-textarea mt-1 block w-full ring-blue-400 outline-none focus:ring"
             rows={8}
