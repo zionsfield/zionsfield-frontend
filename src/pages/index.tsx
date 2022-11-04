@@ -63,15 +63,15 @@ const Home = (props: Props) => {
   return (
     <div className="mt-4 max-w-7xl mx-auto space-y-2 px-3">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Mission Statement</h1>
+        <h1 className="text-2xl font-bold text-green-400">Mission Statement</h1>
         <div>{missionStatement}</div>
       </div>
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Vision Statement</h1>
+        <h1 className="text-2xl font-bold text-orange-400">Vision Statement</h1>
         <div>{visionStatement}</div>
       </div>
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold">School Anthem</h1>
+        <h1 className="text-2xl font-bold text-purple-400">School Anthem</h1>
         <div className="">{getSchoolAnthemLines(schoolAnthemP1)}</div>
         <div className="">{getSchoolAnthemLines(schoolAnthemP2)}</div>
         <div className="">{getSchoolAnthemLines(schoolAnthemP3)}</div>
