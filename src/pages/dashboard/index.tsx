@@ -22,7 +22,7 @@ interface FormData2 {
 }
 
 const Dashboard = (props: Props) => {
-  const [schemes, setSchemes] = useState<ISOW[]>([]);
+  const [scheme, setScheme] = useState<ISOW>(null!);
   const [classes, setClasses] = useState<IClass[]>([]);
   const [subjects, setSubjects] = useState<ISubject[]>([]);
   const [sessions, setSessions] = useState<ITerm[]>([]);
@@ -97,9 +97,10 @@ const Dashboard = (props: Props) => {
     console.log(queryObject);
     const queryParams = getQueryFromObject<FormData>(queryObject);
     console.log(queryParams);
-    const data2 = (await getSchemes({}, `?${queryParams}`)).data.schemes;
+    const data2 = (await getSchemes({}, `?${queryParams}`)).data;
     console.log(data2);
-    setSchemes(data2);
+    setScheme(data2);
+    setContent(data2.content);
   };
 
   // const {
@@ -297,69 +298,75 @@ const Dashboard = (props: Props) => {
             </div>
           </form>
           <div className="">
-            {schemes.length > 0 ? (
+            {scheme ? (
               <div className="">
-                {schemes?.map((scheme) => (
-                  <div key={scheme.id} className="flex-col flex">
-                    {user?.role === Role.TEACHER && (
-                      <div className="w-full flex justify-end space-x-3">
-                        {query.get("edit") ? (
-                          <button
-                            onClick={(e) => {
-                              onSubmit2(e);
-                              route(
-                                `${LinkRoutes.DASHBOARD}?subject=${currentSubject}&class=${currentClass}`
-                              );
-                            }}
-                            className=" z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
-                          >
-                            Save
-                          </button>
-                        ) : (
-                          <button
-                            onClick={(e) =>
-                              route(
-                                `${LinkRoutes.DASHBOARD}?edit=${scheme.id}${
-                                  currentSubject
-                                    ? `&subject=${currentSubject}`
-                                    : ""
-                                }${
-                                  currentClass ? `&class=${currentClass}` : ""
-                                }`
-                              )
-                            }
-                            className="self-end z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
-                          >
-                            Edit
-                          </button>
-                        )}
+                <div key={scheme.id} className="flex-col flex">
+                  {user?.role === Role.TEACHER && (
+                    <div className="w-full flex justify-end space-x-3">
+                      {query.get("edit") ? (
                         <button
-                          onClick={async (e) => {
-                            await deleteScheme({}, `/${scheme.id}`);
-                            route(LinkRoutes.DASHBOARD);
-                            window.location.reload();
+                          onClick={(e) => {
+                            onSubmit2(e);
+                            route(
+                              `${LinkRoutes.DASHBOARD}?subject=${currentSubject}&class=${currentClass}`
+                            );
                           }}
-                          className="z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
+                          className=" z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
                         >
-                          Delete
+                          Save
                         </button>
-                      </div>
-                    )}
+                      ) : (
+                        <button
+                          onClick={(e) =>
+                            route(
+                              `${LinkRoutes.DASHBOARD}?edit=${scheme.id}${
+                                currentSubject
+                                  ? `&subject=${currentSubject}`
+                                  : ""
+                              }${currentClass ? `&class=${currentClass}` : ""}`
+                            )
+                          }
+                          className="self-end z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      <button
+                        onClick={async (e) => {
+                          await deleteScheme({}, `/${scheme.id}`);
+                          route(LinkRoutes.DASHBOARD);
+                          window.location.reload();
+                        }}
+                        className="z-50 bg-blue-500 right-10 px-2 py-1 text-white rounded-md"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
 
-                    {query.get("edit") === scheme.id &&
-                    user?.role === Role.TEACHER ? (
-                      <textarea
-                        onInput={(e) => auto_grow(e.currentTarget)}
-                        value={scheme.content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="resize-none overflow-hidden shadow border rounded py-2 px-3 form-textarea mt-1 block w-full ring-blue-400 outline-none focus:ring"
-                        rows={8}
-                      ></textarea>
-                    ) : (
-                      <p>{scheme.content}</p>
-                    )}
-                  </div>
-                ))}
+                  {query.get("edit") === scheme.id &&
+                  user?.role === Role.TEACHER ? (
+                    <textarea
+                      onInput={(e) => auto_grow(e.currentTarget)}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="resize-none overflow-hidden shadow border rounded py-2 px-3 form-textarea mt-1 block w-full ring-blue-400 outline-none focus:ring"
+                      rows={8}
+                    ></textarea>
+                  ) : (
+                    <div>
+                      {scheme.content
+                        .split("\n")
+                        .map((line, i) =>
+                          line == "" ? (
+                            <br key={i + 1} />
+                          ) : (
+                            <p key={i + 1}>{line}</p>
+                          )
+                        )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex-col flex">
